@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${ADMIN_DB_NAME:-kkutudio_admin}
+      POSTGRES_USER: ${ADMIN_DB_USERNAME:-admin}
+      POSTGRES_PASSWORD: ${ADMIN_DB_PASSWORD:-admin}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${ADMIN_DB_HOST_PORT:-5433}:5432"
+    healthcheck:
+      # -d를 안 주면 pg_isready가 대상 DB명을 -U 값과 같다고 가정해서(admin) 매번 존재하지
+      # 않는 DB에 접속을 시도해 FATAL 로그를 남긴다. 정상 동작에는 영향 없지만 로그가 시끄러워진다.
+      test: ["CMD-SHELL", "pg_isready -U ${ADMIN_DB_USERNAME:-admin} -d ${ADMIN_DB_NAME:-kkutudio_admin}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  admin-api:
+    build:
+      context: ../admin-api
+    environment:
+      ADMIN_DB_URL: jdbc:postgresql://postgres:5432/${ADMIN_DB_NAME:-kkutudio_admin}
+      ADMIN_DB_USERNAME: ${ADMIN_DB_USERNAME:-admin}
+      ADMIN_DB_PASSWORD: ${ADMIN_DB_PASSWORD:-admin}
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
+      ADMIN_BOOTSTRAP_NAME: ${ADMIN_BOOTSTRAP_NAME:-관리자}
+      # kkori 앱 연동용 API 키. app_connection.credential_env_key(KKORI_ADMIN_API_KEY)가 가리키는 값.
+      KKORI_ADMIN_API_KEY: ${KKORI_ADMIN_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "8080"
+    # kkori-api(별도 docker-compose 프로젝트)의 /internal/admin/**을 호출하기 위해 공유 네트워크에도 연결한다.
+    networks:
+      default:
+      kkori-shared:
+
+  nginx:
+    build:
+      context: ..
+      dockerfile: infra/nginx/Dockerfile
+    ports:
+      - "${ADMIN_WEB_PORT:-8081}:80"
+    depends_on:
+      - admin-api
+
+volumes:
+  postgres-data:
+
+networks:
+  kkori-shared:
+    external: true
