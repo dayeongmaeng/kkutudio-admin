@@ -18,5 +18,5 @@ export default function AppIndexRedirect() {
     return <Typography.Text>등록된 앱이 없습니다.</Typography.Text>
   }
 
-  return <Navigate to={`/apps/${apps[0].appCode}/members`} replace />
+  return <Navigate to={`/apps/${apps[0].appCode}/dashboard`} replace />
 }

@@ -4,6 +4,7 @@ import RequireAuth from './auth/RequireAuth'
 import LoginPage from './pages/LoginPage'
 import AppIndexRedirect from './pages/AppIndexRedirect'
 import MembersPage from './pages/MembersPage'
+import DashboardPage from './pages/dashboard/DashboardPage'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           }
         >
           <Route index element={<AppIndexRedirect />} />
+          <Route path="apps/:appCode/dashboard" element={<DashboardPage />} />
           <Route path="apps/:appCode/members" element={<MembersPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

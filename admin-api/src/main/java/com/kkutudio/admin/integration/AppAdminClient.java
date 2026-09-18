@@ -1,7 +1,9 @@
 package com.kkutudio.admin.integration;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -34,6 +36,26 @@ public interface AppAdminClient {
     @PostExchange("/members/{memberId}/force-logout")
     void forceLogoutMember(@PathVariable String memberId);
 
+    @GetExchange("/dashboard/overview")
+    DashboardOverviewResponse getDashboardOverview(@RequestParam String from, @RequestParam String to,
+            @RequestParam String unit);
+
+    @GetExchange("/dashboard/members")
+    DashboardMembersResponse getDashboardMembers(@RequestParam String from, @RequestParam String to,
+            @RequestParam String unit);
+
+    @GetExchange("/dashboard/pets")
+    DashboardPetsResponse getDashboardPets(@RequestParam String from, @RequestParam String to,
+            @RequestParam String unit);
+
+    @GetExchange("/dashboard/records")
+    DashboardRecordsResponse getDashboardRecords(@RequestParam String from, @RequestParam String to,
+            @RequestParam String unit);
+
+    @GetExchange("/dashboard/conversion")
+    DashboardConversionResponse getDashboardConversion(@RequestParam String from, @RequestParam String to,
+            @RequestParam String unit);
+
     record AppHealthResponse(String status) {
     }
 
@@ -49,5 +71,46 @@ public interface AppAdminClient {
     }
 
     record SuspendMemberRequest(String reason) {
+    }
+
+    // 대시보드 응답 DTO. kkori-api의 com.kkori.api.admin.dto.response.dashboard.* record와 1:1로 대응한다.
+
+    record DashboardTimeSeriesPoint(LocalDate bucketStart, long value) {
+    }
+
+    record DashboardEngagementPoint(LocalDate bucketStart, long activeUnits, long eligibleUnits, double rate) {
+    }
+
+    record DashboardStreakSummary(double avgCurrentStreakDays, int maxCurrentStreakDays, Map<String, Long> distribution) {
+    }
+
+    record DashboardDurationStats(double avgHours, double medianHours, long sampleCount) {
+    }
+
+    record DashboardCohortRetention(LocalDate cohortWeekStart, long cohortSize, Double w1, Double w2, Double w4,
+            Double w8) {
+    }
+
+    record DashboardOverviewResponse(long totalMembers, long dau, long wau, long mau, double stickiness,
+            long todayRecordCount, List<DashboardTimeSeriesPoint> activeUnitTrend) {
+    }
+
+    record DashboardMembersResponse(long totalMembers, long withdrawnMembers,
+            List<DashboardTimeSeriesPoint> signupTrend, List<DashboardTimeSeriesPoint> withdrawalTrend,
+            Map<String, Long> byProvider, Map<String, Long> byStatus) {
+    }
+
+    record DashboardPetsResponse(long totalPets, List<DashboardTimeSeriesPoint> newPetTrend,
+            Map<String, Long> bySpecies, Map<String, Long> petsPerMemberDistribution) {
+    }
+
+    record DashboardRecordsResponse(List<DashboardTimeSeriesPoint> photoTrend, List<DashboardTimeSeriesPoint> logTrend,
+            List<DashboardTimeSeriesPoint> activeUnitTrend, List<DashboardEngagementPoint> engagementTrend,
+            List<DashboardTimeSeriesPoint> cumulativeTrend, DashboardStreakSummary streak,
+            Map<String, Long> featureCombination) {
+    }
+
+    record DashboardConversionResponse(DashboardDurationStats signupToFirstPet,
+            DashboardDurationStats petToFirstRecord, List<DashboardCohortRetention> retention) {
     }
 }
